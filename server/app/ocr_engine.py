@@ -3,7 +3,13 @@ import easyocr
 import cv2
 import numpy as np
 
-reader = easyocr.Reader(['en'], gpu=False)
+_reader = None
+
+def get_ocr_reader():
+    global _reader
+    if _reader is None:
+        _reader = easyocr.Reader(['en'], gpu=False)
+    return _reader
 
 def extract_text_from_pdf(file_bytes: bytes) -> str:
     text = ""
@@ -18,5 +24,6 @@ def extract_text_from_image(file_bytes: bytes) -> str:
     if img is None:
         return ""
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    reader = get_ocr_reader()
     results = reader.readtext(gray, detail=0)
     return " ".join(results)
