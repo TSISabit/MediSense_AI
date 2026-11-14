@@ -1,0 +1,13 @@
+# Python
+server/venv/
+server/__pycache__/
+server/app/__pycache__/
+server/models/*.joblib
+*.pyc
+
+# Next.js
+client/node_modules/
+client/.next/
+client/out/
+client/.env*
+client/npm-debug.log*
