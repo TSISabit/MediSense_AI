@@ -2,21 +2,61 @@
   "Hemoglobin": {
     "Male": {"min": 13.5, "max": 17.5, "unit": "g/dL"},
     "Female": {"min": 12.0, "max": 15.5, "unit": "g/dL"},
-    "description": "Protein in red blood cells that carries oxygen throughout the body."
+    "description": "Oxygen-carrying protein in red blood cells (Low levels indicate Anemia)."
   },
   "WBC": {
     "Male": {"min": 4000, "max": 11000, "unit": "/µL"},
     "Female": {"min": 4000, "max": 11000, "unit": "/µL"},
-    "description": "White blood cells that help fight infections and diseases."
+    "description": "Immune cells that fight infection (Elevated in bacterial/viral infections)."
   },
   "Platelet": {
     "Male": {"min": 150000, "max": 450000, "unit": "/µL"},
     "Female": {"min": 150000, "max": 450000, "unit": "/µL"},
-    "description": "Blood cells that help blood clot to stop bleeding."
+    "description": "Clotting cells (Critically monitored in Dengue and bleeding disorders)."
   },
   "RBC": {
     "Male": {"min": 4.5, "max": 5.9, "unit": "million/µL"},
     "Female": {"min": 4.1, "max": 5.1, "unit": "million/µL"},
-    "description": "Red blood cells responsible for delivering oxygen to tissues."
+    "description": "Red blood cell count supporting tissue oxygenation."
+  },
+  "Fasting Glucose": {
+    "Male": {"min": 70, "max": 99, "unit": "mg/dL"},
+    "Female": {"min": 70, "max": 99, "unit": "mg/dL"},
+    "description": "Fasting blood sugar level (100–125 indicates Prediabetes; ≥126 indicates Diabetes risk)."
+  },
+  "HbA1c": {
+    "Male": {"min": 4.0, "max": 5.6, "unit": "%"},
+    "Female": {"min": 4.0, "max": 5.6, "unit": "%"},
+    "description": "3-month average blood glucose indicator."
+  },
+  "Creatinine": {
+    "Male": {"min": 0.7, "max": 1.3, "unit": "mg/dL"},
+    "Female": {"min": 0.6, "max": 1.1, "unit": "mg/dL"},
+    "description": "Kidney filtration waste marker (High values suggest renal stress)."
+  },
+  "SGPT (ALT)": {
+    "Male": {"min": 7, "max": 56, "unit": "U/L"},
+    "Female": {"min": 7, "max": 45, "unit": "U/L"},
+    "description": "Liver enzyme (Elevated in fatty liver, hepatitis, or liver inflammation)."
+  },
+  "SGOT (AST)": {
+    "Male": {"min": 8, "max": 48, "unit": "U/L"},
+    "Female": {"min": 8, "max": 43, "unit": "U/L"},
+    "description": "Enzyme reflecting liver and cardiac tissue health."
+  },
+  "Total Cholesterol": {
+    "Male": {"min": 125, "max": 200, "unit": "mg/dL"},
+    "Female": {"min": 125, "max": 200, "unit": "mg/dL"},
+    "description": "Total blood cholesterol (High levels increase cardiovascular risk)."
+  },
+  "Triglycerides": {
+    "Male": {"min": 50, "max": 150, "unit": "mg/dL"},
+    "Female": {"min": 50, "max": 150, "unit": "mg/dL"},
+    "description": "Blood lipids associated with metabolic and heart health."
+  },
+  "TSH": {
+    "Male": {"min": 0.4, "max": 4.0, "unit": "mIU/L"},
+    "Female": {"min": 0.4, "max": 4.0, "unit": "mIU/L"},
+    "description": "Thyroid-Stimulating Hormone (High = Hypothyroidism; Low = Hyperthyroidism)."
   }
 }

@@ -13,11 +13,15 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-const SAMPLE_REPORT_TEXT = `COMPLETE BLOOD COUNT (CBC)
+const SAMPLE_REPORT_TEXT = `COMPREHENSIVE HEALTH PANEL
 Hemoglobin: 10.2 g/dL
-WBC: 12,500 /µL
-Platelet: 250,000 /µL
-RBC: 3.8 million/µL`;
+WBC: 12,800 /µL
+Platelet: 240,000 /µL
+Fasting Glucose: 158 mg/dL
+Creatinine: 1.1 mg/dL
+SGPT (ALT): 68 U/L
+Total Cholesterol: 225 mg/dL
+TSH: 2.4 mIU/L`;
 
 export default function HomePage() {
   const [file, setFile] = useState<File | null>(null);

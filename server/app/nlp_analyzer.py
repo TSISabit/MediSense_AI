@@ -11,7 +11,15 @@ PATTERNS = {
     "Hemoglobin": r"(?:Hemoglobin|Haemoglobin|Hb|HGB)[\s:\-]*(\d+\.?\d*)",
     "WBC": r"(?:WBC|White Blood Cell|Total Leukocyte Count|TLC)[\s:\-]*([\d,]+)",
     "Platelet": r"(?:Platelet|Platelets|PLT)[\s:\-]*([\d,]+)",
-    "RBC": r"(?:RBC|Red Blood Cell|Total RBC)[\s:\-]*(\d+\.?\d*)"
+    "RBC": r"(?:RBC|Red Blood Cell|Total RBC)[\s:\-]*(\d+\.?\d*)",
+    "Fasting Glucose": r"(?:Fasting Glucose|Fasting Blood Sugar|FBS|Glucose Fasting|Blood Glucose)[\s:\-]*(\d+\.?\d*)",
+    "HbA1c": r"(?:HbA1c|Glycated Hemoglobin|A1C)[\s:\-]*(\d+\.?\d*)",
+    "Creatinine": r"(?:Serum Creatinine|Creatinine)[\s:\-]*(\d+\.?\d*)",
+    "SGPT (ALT)": r"(?:SGPT|ALT|Alanine Aminotransferase)[\s:\-]*(\d+\.?\d*)",
+    "SGOT (AST)": r"(?:SGOT|AST|Aspartate Aminotransferase)[\s:\-]*(\d+\.?\d*)",
+    "Total Cholesterol": r"(?:Total Cholesterol|Cholesterol)[\s:\-]*(\d+\.?\d*)",
+    "Triglycerides": r"(?:Triglycerides|Triglyceride|TG)[\s:\-]*(\d+\.?\d*)",
+    "TSH": r"(?:TSH|Thyroid Stimulating Hormone)[\s:\-]*(\d+\.?\d*)"
 }
 
 def parse_and_analyze(raw_text: str, gender: str) -> tuple[dict, list]:
