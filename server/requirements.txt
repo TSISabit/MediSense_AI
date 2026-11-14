@@ -1,0 +1,11 @@
+fastapi>=0.115.0
+uvicorn>=0.30.6
+python-multipart>=0.0.12
+pymupdf>=1.25.0
+easyocr>=1.7.2
+opencv-python-headless>=4.10.0.84
+numpy>=2.0.0
+pandas>=2.2.3
+scikit-learn>=1.6.0
+joblib>=1.4.2
+pydantic>=2.9.2
