@@ -26,7 +26,20 @@ class UniversalReportSchema(BaseModel):
     findings: list[BiomarkerItem]
     ml_insight: ClinicalInsight
 
+_CACHED_MODEL: str | None = None
+
+def get_client():
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        return None
+    # সর্বোচ্চ ২৫ সেকেন্ড টাইমআউট যাতে রিকোয়েস্ট অনন্তকাল ঝুলে না থাকে
+    return genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=25_000))
+
 def get_working_model(client) -> str:
+    global _CACHED_MODEL
+    if _CACHED_MODEL:
+        return _CACHED_MODEL
+
     preferred = ["gemini-3.8-flash", "gemini-3-flash-preview", "gemini-2.5-flash"]
     try:
         available = [
@@ -36,12 +49,16 @@ def get_working_model(client) -> str:
         ]
         for p in preferred:
             if p in available:
+                _CACHED_MODEL = p
                 return p
         if available:
+            _CACHED_MODEL = available[0]
             return available[0]
-    except Exception:
-        pass
-    return "gemini-3.8-flash"
+    except Exception as e:
+        print(f"Model list check skipped: {e}")
+
+    _CACHED_MODEL = "gemini-3.8-flash"
+    return _CACHED_MODEL
 
 SYSTEM_PROMPT = """
 You are MediSense AI, an advanced multimodal clinical diagnostic report interpreter.
@@ -53,20 +70,20 @@ Tasks:
    - If numeric: extract exact `value`, `unit`, and biological sex-calibrated `min` & `max` reference ranges (use ranges printed on the report if available, otherwise standard clinical ranges). Set `status` strictly to "LOW", "HIGH", or "NORMAL".
    - If qualitative/imaging (e.g., "Dengue NS1: Positive" or "Chest X-Ray: Mild pleural effusion"): set `value`: 1 (if abnormal/positive) or 0 (if normal/negative), `min`: 0, `max`: 0, `unit`: "Qualitative", and `status`: "HIGH" (for abnormal/positive) or "NORMAL".
 3. In `ml_insight`:
-   - `category`: Primary clinical finding or suspected condition pattern (e.g., "Iron-Deficiency Anemia & Mild Infection Risk", "Hypothyroidism Pattern", "Normal Health Screening").
+   - `category`: Primary clinical finding or suspected condition pattern.
    - `confidence`: Realistic confidence score (88.0 - 99.0).
    - `detailed_explanation`: A clear, empathetic, thorough 3-4 sentence explanation of what the overall report means in plain language.
-   - `possible_conditions`: List of 1-3 potential medical conditions or clinical possibilities associated with the abnormal findings (or ["No abnormalities detected"] if normal).
-   - `recommendations`: List of 2-3 actionable next steps (e.g., specific specialist to consult, hydration/dietary focus, or follow-up tests).
+   - `possible_conditions`: List of 1-3 potential medical conditions or clinical possibilities associated with the abnormal findings.
+   - `recommendations`: List of 2-3 actionable next steps.
 """
 
 def analyze_file_multimodal(file_bytes: bytes, mime_type: str, age: int, gender: str) -> dict | None:
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
+    global _CACHED_MODEL
+    client = get_client()
+    if not client:
         return None
 
     try:
-        client = genai.Client(api_key=api_key)
         model_name = get_working_model(client)
         prompt = SYSTEM_PROMPT.format(age=age, gender=gender)
 
@@ -92,17 +109,18 @@ def analyze_file_multimodal(file_bytes: bytes, mime_type: str, age: int, gender:
                 "ml_insight": parsed["ml_insight"],
             }
     except Exception as e:
+        _CACHED_MODEL = None  # এরর হলে ক্যাশ রিসেট করবে
         print(f"Multimodal Gemini error: {e}")
 
     return None
 
 def analyze_text_universal(raw_text: str, age: int, gender: str) -> dict | None:
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
+    global _CACHED_MODEL
+    client = get_client()
+    if not client:
         return None
 
     try:
-        client = genai.Client(api_key=api_key)
         model_name = get_working_model(client)
         prompt = SYSTEM_PROMPT.format(age=age, gender=gender) + f"\n\nReport Text:\n\"\"\"{raw_text}\"\"\""
 
@@ -125,6 +143,7 @@ def analyze_text_universal(raw_text: str, age: int, gender: str) -> dict | None:
                 "ml_insight": parsed["ml_insight"],
             }
     except Exception as e:
+        _CACHED_MODEL = None
         print(f"Text Gemini error: {e}")
 
     return None

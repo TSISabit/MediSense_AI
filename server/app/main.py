@@ -1,20 +1,24 @@
-import os
+import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from google import genai
 from app.ocr_engine import extract_text_from_image, extract_text_from_pdf
 from app.nlp_analyzer import parse_and_analyze
 from app.ml_model import get_ml_prediction, train_and_save_model
-from app.universal_ai import analyze_file_multimodal, analyze_text_universal, get_working_model
+from app.universal_ai import (
+    analyze_file_multimodal,
+    analyze_text_universal,
+    get_client,
+    get_working_model,
+)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     train_and_save_model()
     yield
 
-app = FastAPI(title="MediSense AI Universal API", version="3.1.0", lifespan=lifespan)
+app = FastAPI(title="MediSense AI Universal API", version="3.2.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -62,13 +66,18 @@ async def analyze_file(
     else:
         raise HTTPException(status_code=400, detail="Unsupported file type. Upload PDF, PNG, JPG, or WEBP.")
 
-    # ১. Direct Multimodal Vision AI
-    universal_result = analyze_file_multimodal(file_bytes, mime_type, age, gender)
+    # ১. Non-blocking Multimodal Vision AI (সর্বোচ্চ ২৫ সেকেন্ড টাইমআউটসহ)
+    universal_result = await asyncio.to_thread(
+        analyze_file_multimodal, file_bytes, mime_type, age, gender
+    )
     if universal_result:
         return universal_result
 
     # ২. Fallback: OCR + Local Random Forest
-    raw_text = extract_text_from_pdf(file_bytes) if mime_type == "application/pdf" else extract_text_from_image(file_bytes)
+    raw_text = await asyncio.to_thread(
+        extract_text_from_pdf if mime_type == "application/pdf" else extract_text_from_image,
+        file_bytes,
+    )
     extracted_values, findings = parse_and_analyze(raw_text, gender)
     if not findings:
         raise HTTPException(status_code=422, detail="Could not extract recognizable clinical data from the report.")
@@ -90,7 +99,9 @@ async def analyze_text(payload: TextAnalysisRequest):
     if payload.gender not in ["Male", "Female"]:
         raise HTTPException(status_code=400, detail="Gender must be Male or Female")
 
-    universal_result = analyze_text_universal(payload.text, payload.age, payload.gender)
+    universal_result = await asyncio.to_thread(
+        analyze_text_universal, payload.text, payload.age, payload.gender
+    )
     if universal_result:
         return universal_result
 
@@ -109,32 +120,34 @@ async def analyze_text(payload: TextAnalysisRequest):
         "ml_insight": ml_insight
     }
 
+def _run_chat_sync(payload: ChatRequest) -> str:
+    client = get_client()
+    if not client:
+        raise ValueError("GEMINI_API_KEY is missing on server.")
+    model_name = get_working_model(client)
+    prompt = f"""
+    You are MediSense AI, an empathetic clinical report assistant.
+    Patient: {payload.age}-year-old {payload.gender}.
+    Analyzed Medical Report Data:
+    {payload.report_context}
+
+    User Question: {payload.message}
+
+    Instructions:
+    - Reply in the exact language the user used (Bangla if asked in Bangla, English if asked in English).
+    - Explain clearly based on the patient's specific lab values and findings above.
+    - Provide practical diet/lifestyle guidance and advise consulting a specialist doctor. Keep it clear and well-structured.
+    """
+    response = client.models.generate_content(
+        model=model_name,
+        contents=prompt,
+    )
+    return response.text or ""
+
 @app.post("/api/chat")
 async def chat_with_report(payload: ChatRequest):
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        raise HTTPException(status_code=500, detail="GEMINI_API_KEY is missing on server.")
-
     try:
-        client = genai.Client(api_key=api_key)
-        model_name = get_working_model(client)
-        prompt = f"""
-        You are MediSense AI, an empathetic clinical report assistant.
-        Patient: {payload.age}-year-old {payload.gender}.
-        Analyzed Medical Report Data:
-        {payload.report_context}
-
-        User Question: {payload.message}
-
-        Instructions:
-        - Reply in the exact language the user used (Bangla if asked in Bangla, English if asked in English).
-        - Explain clearly based on the patient's specific lab values and findings above.
-        - Provide practical diet/lifestyle guidance and advise consulting a specialist doctor. Keep it clear and well-structured.
-        """
-        response = client.models.generate_content(
-            model=model_name,
-            contents=prompt,
-        )
-        return {"reply": response.text}
+        reply = await asyncio.to_thread(_run_chat_sync, payload)
+        return {"reply": reply}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Chat error: {str(e)}")
