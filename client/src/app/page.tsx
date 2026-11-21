@@ -78,41 +78,56 @@ export default function HomePage() {
     });
   };
 
+  const fileToBase64 = (targetFile: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(targetFile);
+    });
+  };
+
   const handleFileAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) {
-      setError(
-        "Please upload any medical report (PDF or Image), or click 'Try Multi-Disease Demo'.",
-      );
+      setError("Please upload any medical report (PDF or Image), or click 'Try Multi-Disease Demo'.");
       return;
     }
 
     setLoading(true);
     setError(null);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 35000);
+
     try {
       const processedFile = await compressImage(file);
-      const formData = new FormData();
-      formData.append("file", processedFile);
-      formData.append("age", age.toString());
-      formData.append("gender", gender);
+      const base64String = await fileToBase64(processedFile);
 
-      const res = await fetch(`${apiUrl}/api/analyze-file`, {
+      const res = await fetch(`${apiUrl}/api/analyze-base64`, {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          file_base64: base64String,
+          mime_type: processedFile.type || "image/jpeg",
+          age,
+          gender,
+        }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(
-          data.detail || "Failed to analyze the uploaded report.",
-        );
+        throw new Error(data.detail || "Failed to analyze the uploaded report.");
       }
       setResult(data);
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : "Server connection failed.",
-      );
+      if (err instanceof Error && err.name === "AbortError") {
+        setError("Server took too long (Render cold start). Please click 'Analyze Uploaded Report' one more time now that the server is awake!");
+      } else {
+        setError(err instanceof Error ? err.message : "Server connection failed.");
+      }
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
     }
   };
