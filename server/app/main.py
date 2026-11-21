@@ -62,12 +62,10 @@ async def analyze_file(
     else:
         raise HTTPException(status_code=400, detail="Unsupported file type. Upload PDF, PNG, JPG, or WEBP.")
 
-    # ১. Direct Multimodal Vision AI (যেকোনো রিপোর্ট, টেবিল, স্ক্যান বা প্রেসক্রিপশন পড়তে সক্ষম)
     universal_result = analyze_file_multimodal(file_bytes, mime_type, age, gender)
     if universal_result:
         return universal_result
 
-    # ২. Fallback: OCR + Local Random Forest
     raw_text = extract_text_from_pdf(file_bytes) if mime_type == "application/pdf" else extract_text_from_image(file_bytes)
     extracted_values, findings = parse_and_analyze(raw_text, gender)
     if not findings:
@@ -131,7 +129,7 @@ async def chat_with_report(payload: ChatRequest):
         - Provide practical diet/lifestyle guidance and advise consulting a specialist doctor. Keep it clear and well-structured.
         """
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-3.0-flash",
             contents=prompt,
         )
         return {"reply": response.text}

@@ -53,7 +53,7 @@ def analyze_file_multimodal(file_bytes: bytes, mime_type: str, age: int, gender:
         prompt = SYSTEM_PROMPT.format(age=age, gender=gender)
 
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-3.0-flash",
             contents=[
                 types.Part.from_bytes(data=file_bytes, mime_type=mime_type),
                 prompt,
@@ -88,7 +88,7 @@ def analyze_text_universal(raw_text: str, age: int, gender: str) -> dict | None:
         prompt = SYSTEM_PROMPT.format(age=age, gender=gender) + f"\n\nReport Text:\n\"\"\"{raw_text}\"\"\""
 
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-3.0-flash",
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
