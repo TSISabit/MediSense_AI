@@ -5,13 +5,14 @@ from pydantic import BaseModel
 from app.ocr_engine import extract_text_from_image, extract_text_from_pdf
 from app.nlp_analyzer import parse_and_analyze
 from app.ml_model import get_ml_prediction, train_and_save_model
+from app.universal_ai import analyze_with_gemini
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     train_and_save_model()
     yield
 
-app = FastAPI(title="MediSense AI API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="MediSense AI Universal API", version="2.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -28,7 +29,7 @@ class TextAnalysisRequest(BaseModel):
 
 @app.get("/")
 def health_check():
-    return {"status": "online", "service": "MediSense AI Backend"}
+    return {"status": "online", "service": "MediSense AI Universal Backend"}
 
 @app.post("/api/analyze-file")
 async def analyze_file(
@@ -49,11 +50,18 @@ async def analyze_file(
     else:
         raise HTTPException(status_code=400, detail="Unsupported file type. Upload PDF, PNG, or JPG.")
 
+    if not raw_text.strip():
+        raise HTTPException(status_code=422, detail="Could not extract readable text from the uploaded file.")
+
+    universal_result = analyze_with_gemini(raw_text, age, gender)
+    if universal_result:
+        return universal_result
+
     extracted_values, findings = parse_and_analyze(raw_text, gender)
     if not findings:
         raise HTTPException(
             status_code=422,
-            detail="Could not detect standard CBC parameters (Hemoglobin, WBC, Platelet, RBC) in the uploaded report."
+            detail="Could not detect recognizable medical biomarkers in the uploaded report."
         )
 
     ml_insight = get_ml_prediction(age, gender, extracted_values)
@@ -69,9 +77,14 @@ async def analyze_file(
 async def analyze_text(payload: TextAnalysisRequest):
     if payload.gender not in ["Male", "Female"]:
         raise HTTPException(status_code=400, detail="Gender must be Male or Female")
+
+    universal_result = analyze_with_gemini(payload.text, payload.age, payload.gender)
+    if universal_result:
+        return universal_result
+
     extracted_values, findings = parse_and_analyze(payload.text, payload.gender)
     if not findings:
-        raise HTTPException(status_code=422, detail="No valid CBC parameters found in text.")
+        raise HTTPException(status_code=422, detail="No valid medical parameters found in text.")
     ml_insight = get_ml_prediction(payload.age, payload.gender, extracted_values)
     return {
         "patient": {"age": payload.age, "gender": payload.gender},
