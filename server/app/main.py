@@ -1,18 +1,20 @@
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from google import genai
 from app.ocr_engine import extract_text_from_image, extract_text_from_pdf
 from app.nlp_analyzer import parse_and_analyze
 from app.ml_model import get_ml_prediction, train_and_save_model
-from app.universal_ai import analyze_with_gemini
+from app.universal_ai import analyze_file_multimodal, analyze_text_universal
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     train_and_save_model()
     yield
 
-app = FastAPI(title="MediSense AI Universal API", version="2.0.0", lifespan=lifespan)
+app = FastAPI(title="MediSense AI Universal API", version="3.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -27,9 +29,15 @@ class TextAnalysisRequest(BaseModel):
     age: int = 30
     gender: str = "Male"
 
+class ChatRequest(BaseModel):
+    message: str
+    report_context: str
+    age: int = 30
+    gender: str = "Male"
+
 @app.get("/")
 def health_check():
-    return {"status": "online", "service": "MediSense AI Universal Backend"}
+    return {"status": "online", "service": "MediSense AI Universal Multimodal Backend"}
 
 @app.post("/api/analyze-file")
 async def analyze_file(
@@ -44,31 +52,35 @@ async def analyze_file(
     filename = file.filename.lower() if file.filename else ""
 
     if filename.endswith(".pdf"):
-        raw_text = extract_text_from_pdf(file_bytes)
-    elif filename.endswith((".png", ".jpg", ".jpeg", ".webp")):
-        raw_text = extract_text_from_image(file_bytes)
+        mime_type = "application/pdf"
+    elif filename.endswith(".png"):
+        mime_type = "image/png"
+    elif filename.endswith((".jpg", ".jpeg")):
+        mime_type = "image/jpeg"
+    elif filename.endswith(".webp"):
+        mime_type = "image/webp"
     else:
-        raise HTTPException(status_code=400, detail="Unsupported file type. Upload PDF, PNG, or JPG.")
+        raise HTTPException(status_code=400, detail="Unsupported file type. Upload PDF, PNG, JPG, or WEBP.")
 
-    if not raw_text.strip():
-        raise HTTPException(status_code=422, detail="Could not extract readable text from the uploaded file.")
-
-    universal_result = analyze_with_gemini(raw_text, age, gender)
+    # ১. Direct Multimodal Vision AI (যেকোনো রিপোর্ট, টেবিল, স্ক্যান বা প্রেসক্রিপশন পড়তে সক্ষম)
+    universal_result = analyze_file_multimodal(file_bytes, mime_type, age, gender)
     if universal_result:
         return universal_result
 
+    # ২. Fallback: OCR + Local Random Forest
+    raw_text = extract_text_from_pdf(file_bytes) if mime_type == "application/pdf" else extract_text_from_image(file_bytes)
     extracted_values, findings = parse_and_analyze(raw_text, gender)
     if not findings:
-        raise HTTPException(
-            status_code=422,
-            detail="Could not detect recognizable medical biomarkers in the uploaded report."
-        )
+        raise HTTPException(status_code=422, detail="Could not extract recognizable clinical data from the report.")
 
     ml_insight = get_ml_prediction(age, gender, extracted_values)
+    ml_insight["detailed_explanation"] = "Analyzed via local clinical reference engine."
+    ml_insight["possible_conditions"] = [ml_insight["category"]]
+    ml_insight["recommendations"] = ["Consult a qualified physician with your original lab report."]
 
     return {
         "patient": {"age": age, "gender": gender},
-        "extracted_text_preview": raw_text[:300],
+        "report_type": "Laboratory Report",
         "findings": findings,
         "ml_insight": ml_insight
     }
@@ -78,7 +90,7 @@ async def analyze_text(payload: TextAnalysisRequest):
     if payload.gender not in ["Male", "Female"]:
         raise HTTPException(status_code=400, detail="Gender must be Male or Female")
 
-    universal_result = analyze_with_gemini(payload.text, payload.age, payload.gender)
+    universal_result = analyze_text_universal(payload.text, payload.age, payload.gender)
     if universal_result:
         return universal_result
 
@@ -86,8 +98,42 @@ async def analyze_text(payload: TextAnalysisRequest):
     if not findings:
         raise HTTPException(status_code=422, detail="No valid medical parameters found in text.")
     ml_insight = get_ml_prediction(payload.age, payload.gender, extracted_values)
+    ml_insight["detailed_explanation"] = "Analyzed via local clinical reference engine."
+    ml_insight["possible_conditions"] = [ml_insight["category"]]
+    ml_insight["recommendations"] = ["Consult a physician for clinical correlation."]
+
     return {
         "patient": {"age": payload.age, "gender": payload.gender},
+        "report_type": "Multi-Organ Health Panel",
         "findings": findings,
         "ml_insight": ml_insight
     }
+
+@app.post("/api/chat")
+async def chat_with_report(payload: ChatRequest):
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY is missing on server.")
+
+    try:
+        client = genai.Client(api_key=api_key)
+        prompt = f"""
+        You are MediSense AI, an empathetic clinical report assistant.
+        Patient: {payload.age}-year-old {payload.gender}.
+        Analyzed Medical Report Data:
+        {payload.report_context}
+
+        User Question: {payload.message}
+
+        Instructions:
+        - Reply in the exact language the user used (Bangla if asked in Bangla, English if asked in English).
+        - Explain clearly based on the patient's specific lab values and findings above.
+        - Provide practical diet/lifestyle guidance and advise consulting a specialist doctor. Keep it clear and well-structured.
+        """
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+        )
+        return {"reply": response.text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Chat error: {str(e)}")

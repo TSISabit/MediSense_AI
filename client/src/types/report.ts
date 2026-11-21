@@ -12,6 +12,9 @@ export interface TestFinding {
 export interface MLInsight {
   category: string;
   confidence: number;
+  detailed_explanation?: string;
+  possible_conditions?: string[];
+  recommendations?: string[];
 }
 
 export interface AnalysisResponse {
@@ -19,7 +22,7 @@ export interface AnalysisResponse {
     age: number;
     gender: "Male" | "Female";
   };
-  extracted_text_preview?: string;
+  report_type?: string;
   findings: TestFinding[];
   ml_insight: MLInsight;
 }
