@@ -27,7 +27,7 @@ class UniversalReportSchema(BaseModel):
     ml_insight: ClinicalInsight
 
 def get_working_model(client) -> str:
-    preferred = ["gemini-3-flash-preview", "gemini-2.5-flash", "gemini-2.0-flash"]
+    preferred = ["gemini-3.8-flash", "gemini-3-flash-preview", "gemini-2.5-flash"]
     try:
         available = [
             m.name.replace("models/", "")
@@ -41,7 +41,7 @@ def get_working_model(client) -> str:
             return available[0]
     except Exception:
         pass
-    return "gemini-3-flash-preview"
+    return "gemini-3.8-flash"
 
 SYSTEM_PROMPT = """
 You are MediSense AI, an advanced multimodal clinical diagnostic report interpreter.
