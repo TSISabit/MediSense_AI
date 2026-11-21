@@ -26,6 +26,23 @@ class UniversalReportSchema(BaseModel):
     findings: list[BiomarkerItem]
     ml_insight: ClinicalInsight
 
+def get_working_model(client) -> str:
+    preferred = ["gemini-3-flash-preview", "gemini-2.5-flash", "gemini-2.0-flash"]
+    try:
+        available = [
+            m.name.replace("models/", "")
+            for m in client.models.list()
+            if "generateContent" in (m.supported_actions or []) and "flash" in m.name.lower()
+        ]
+        for p in preferred:
+            if p in available:
+                return p
+        if available:
+            return available[0]
+    except Exception:
+        pass
+    return "gemini-3-flash-preview"
+
 SYSTEM_PROMPT = """
 You are MediSense AI, an advanced multimodal clinical diagnostic report interpreter.
 Analyze the provided medical report (CBC, Biochemistry, Lipid, Liver, Kidney, Thyroid, Urine, Serology, ECG, X-Ray, Ultrasound, MRI, or Prescription) for a {age}-year-old {gender} patient.
@@ -50,10 +67,11 @@ def analyze_file_multimodal(file_bytes: bytes, mime_type: str, age: int, gender:
 
     try:
         client = genai.Client(api_key=api_key)
+        model_name = get_working_model(client)
         prompt = SYSTEM_PROMPT.format(age=age, gender=gender)
 
         response = client.models.generate_content(
-            model="gemini-3.0-flash",
+            model=model_name,
             contents=[
                 types.Part.from_bytes(data=file_bytes, mime_type=mime_type),
                 prompt,
@@ -85,10 +103,11 @@ def analyze_text_universal(raw_text: str, age: int, gender: str) -> dict | None:
 
     try:
         client = genai.Client(api_key=api_key)
+        model_name = get_working_model(client)
         prompt = SYSTEM_PROMPT.format(age=age, gender=gender) + f"\n\nReport Text:\n\"\"\"{raw_text}\"\"\""
 
         response = client.models.generate_content(
-            model="gemini-3.0-flash",
+            model=model_name,
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",

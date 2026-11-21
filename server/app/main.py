@@ -7,14 +7,14 @@ from google import genai
 from app.ocr_engine import extract_text_from_image, extract_text_from_pdf
 from app.nlp_analyzer import parse_and_analyze
 from app.ml_model import get_ml_prediction, train_and_save_model
-from app.universal_ai import analyze_file_multimodal, analyze_text_universal
+from app.universal_ai import analyze_file_multimodal, analyze_text_universal, get_working_model
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     train_and_save_model()
     yield
 
-app = FastAPI(title="MediSense AI Universal API", version="3.0.0", lifespan=lifespan)
+app = FastAPI(title="MediSense AI Universal API", version="3.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -62,10 +62,12 @@ async def analyze_file(
     else:
         raise HTTPException(status_code=400, detail="Unsupported file type. Upload PDF, PNG, JPG, or WEBP.")
 
+    # ১. Direct Multimodal Vision AI
     universal_result = analyze_file_multimodal(file_bytes, mime_type, age, gender)
     if universal_result:
         return universal_result
 
+    # ২. Fallback: OCR + Local Random Forest
     raw_text = extract_text_from_pdf(file_bytes) if mime_type == "application/pdf" else extract_text_from_image(file_bytes)
     extracted_values, findings = parse_and_analyze(raw_text, gender)
     if not findings:
@@ -115,6 +117,7 @@ async def chat_with_report(payload: ChatRequest):
 
     try:
         client = genai.Client(api_key=api_key)
+        model_name = get_working_model(client)
         prompt = f"""
         You are MediSense AI, an empathetic clinical report assistant.
         Patient: {payload.age}-year-old {payload.gender}.
@@ -129,7 +132,7 @@ async def chat_with_report(payload: ChatRequest):
         - Provide practical diet/lifestyle guidance and advise consulting a specialist doctor. Keep it clear and well-structured.
         """
         response = client.models.generate_content(
-            model="gemini-3.0-flash",
+            model=model_name,
             contents=prompt,
         )
         return {"reply": response.text}
