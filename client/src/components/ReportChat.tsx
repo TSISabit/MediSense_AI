@@ -52,13 +52,15 @@ export default function ReportChat({ result }: ReportChatProps) {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Failed to get response.");
+      if (!res.ok) throw new Error(data.detail || `Server Error (${res.status})`);
 
       setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
-    } catch {
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "সার্ভারের সাথে সংযোগ করা যাচ্ছে না।";
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "দুঃখিত, এই মুহূর্তে সার্ভারের সাথে সংযোগ করা যাচ্ছে না।" },
+        { role: "assistant", content: `⚠️ Error: ${errorMessage}` },
       ]);
     } finally {
       setSending(false);
