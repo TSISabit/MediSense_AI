@@ -6,3 +6,88 @@ RBC: 3.7 million/µL
 Fasting Glucose: 165 mg/dL
 Creatinine: 1.8 mg/dL
 Total Cholesterol: 245 mg/dL
+
+
+
+
+DIAGNOSTIC LABORATORY REPORT - BIOCHEMISTRY & RENAL PANEL
+Fasting Blood Glucose: 186 mg/dL
+Postprandial Blood Glucose (2h PP): 264 mg/dL
+HbA1c (Glycated Hemoglobin): 8.9 %
+Serum Creatinine: 1.85 mg/dL
+Blood Urea Nitrogen (BUN): 38 mg/dL
+eGFR: 46 mL/min/1.73m2
+Urine Microalbumin: 85 mg/L
+
+
+
+
+
+ENDOCRINOLOGY & LIPID PROFILE REPORT
+TSH (Thyroid Stimulating Hormone): 11.4 mIU/L
+Free T3 (FT3): 1.8 pg/mL
+Free T4 (FT4): 0.65 ng/dL
+Total Cholesterol: 262 mg/dL
+Triglycerides: 240 mg/dL
+LDL Cholesterol: 178 mg/dL
+HDL Cholesterol: 34 mg/dL
+
+
+
+
+HEPATOBILIARY & LIVER FUNCTION TEST (LFT)
+Serum Bilirubin (Total): 3.6 mg/dL
+Serum Bilirubin (Direct): 2.1 mg/dL
+SGPT (ALT): 165 U/L
+SGOT (AST): 132 U/L
+Alkaline Phosphatase (ALP): 195 U/L
+Serum Albumin: 3.1 g/dL
+Gamma-GT (GGT): 98 U/L
+
+
+
+HEPATOBILIARY & LIVER FUNCTION TEST (LFT)
+Serum Bilirubin (Total): 3.6 mg/dL
+Serum Bilirubin (Direct): 2.1 mg/dL
+SGPT (ALT): 165 U/L
+SGOT (AST): 132 U/L
+Alkaline Phosphatase (ALP): 195 U/L
+Serum Albumin: 3.1 g/dL
+Gamma-GT (GGT): 98 U/L
+
+
+
+HEMATOLOGY & SEROLOGY FEVER SCREENING
+Hemoglobin: 14.9 g/dL
+Total WBC Count: 2,800 /µL
+Neutrophils: 38 %
+Lymphocytes: 54 %
+Platelet Count: 58,000 /µL
+Hematocrit (PCV): 49.2 %
+Dengue NS1 Antigen: Positive
+Dengue IgM Antibody: Reactive
+CRP (C-Reactive Protein): 42 mg/L
+
+
+
+NUTRITIONAL & HEMATOLOGY WORKUP
+Hemoglobin: 9.4 g/dL
+MCV (Mean Corpuscular Volume): 71.0 fL
+Serum Ferritin: 8.5 ng/mL
+Serum Iron: 34 µg/dL
+Vitamin D (25-OH Total): 12.4 ng/mL
+Vitamin B12: 148 pg/mL
+Serum Calcium: 8.1 mg/dL
+
+
+
+ULTRASONOGRAPHY OF WHOLE ABDOMEN
+Liver: Mildly enlarged in size (16.2 cm) with diffuse increased parenchymal echogenicity suggestive of Grade II Fatty Liver infiltration. No focal mass seen.
+Gallbladder: Well distended, wall thickness normal. Multiple tiny echogenic calculi (largest measuring 6 mm) noted in the lumen with posterior acoustic shadowing.
+Kidneys: Both kidneys are normal in size, shape, and position. Corticomedullary differentiation is well maintained. No hydronephrosis or calculus seen.
+Impression:
+1. Grade II Fatty Liver (Hepatic Steatosis).
+2. Cholelithiasis (Gallbladder stones).
+
+
+
