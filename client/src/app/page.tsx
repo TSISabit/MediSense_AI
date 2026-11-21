@@ -36,18 +36,63 @@ export default function HomePage() {
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8001";
 
+  const compressImage = (imageFile: File): Promise<File> => {
+    return new Promise((resolve) => {
+      if (!imageFile.type.startsWith("image/")) {
+        resolve(imageFile);
+        return;
+      }
+      const img = new Image();
+      const url = URL.createObjectURL(imageFile);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const MAX_WIDTH = 1280;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_WIDTH) {
+          height = Math.round((height * MAX_WIDTH) / width);
+          width = MAX_WIDTH;
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(new File([blob], "report.jpg", { type: "image/jpeg" }));
+            } else {
+              resolve(imageFile);
+            }
+          },
+          "image/jpeg",
+          0.8,
+        );
+      };
+      img.onerror = () => resolve(imageFile);
+      img.src = url;
+    });
+  };
+
   const handleFileAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) {
-      setError("Please upload any medical report (PDF or Image), or click 'Try Multi-Disease Demo'.");
+      setError(
+        "Please upload any medical report (PDF or Image), or click 'Try Multi-Disease Demo'.",
+      );
       return;
     }
 
     setLoading(true);
     setError(null);
     try {
+      const processedFile = await compressImage(file);
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", processedFile);
       formData.append("age", age.toString());
       formData.append("gender", gender);
 
@@ -58,11 +103,15 @@ export default function HomePage() {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.detail || "Failed to analyze the uploaded report.");
+        throw new Error(
+          data.detail || "Failed to analyze the uploaded report.",
+        );
       }
       setResult(data);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Server connection failed.");
+      setError(
+        err instanceof Error ? err.message : "Server connection failed.",
+      );
     } finally {
       setLoading(false);
     }
@@ -84,7 +133,9 @@ export default function HomePage() {
       }
       setResult(data);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Could not connect to AI backend.");
+      setError(
+        err instanceof Error ? err.message : "Could not connect to AI backend.",
+      );
     } finally {
       setLoading(false);
     }
@@ -104,8 +155,10 @@ export default function HomePage() {
             Understand Any Medical Report in Seconds
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-slate-600 sm:text-base">
-            Upload any diagnostic report—CBC, Diabetes, Liver, Kidney, Thyroid, Lipid, Urine, or Imaging PDF/Photo.
-            MediSense AI detects abnormalities, explains clinical findings, and answers your questions.
+            Upload any diagnostic report—CBC, Diabetes, Liver, Kidney, Thyroid,
+            Lipid, Urine, or Imaging PDF/Photo. MediSense AI detects
+            abnormalities, explains clinical findings, and answers your
+            questions.
           </p>
         </div>
 
@@ -132,7 +185,9 @@ export default function HomePage() {
                 </label>
                 <select
                   value={gender}
-                  onChange={(e) => setGender(e.target.value as "Male" | "Female")}
+                  onChange={(e) =>
+                    setGender(e.target.value as "Male" | "Female")
+                  }
                   className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/20"
                 >
                   <option value="Male">Male</option>
@@ -144,10 +199,13 @@ export default function HomePage() {
             <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/70 px-6 py-8 text-center transition hover:border-teal-500 hover:bg-teal-50/30">
               <UploadCloud className="h-10 w-10 text-teal-600" />
               <span className="mt-3 text-sm font-semibold text-slate-800">
-                {file ? file.name : "Click to upload any medical report (PDF, JPG, PNG, WEBP)"}
+                {file
+                  ? file.name
+                  : "Click to upload any medical report (PDF, JPG, PNG, WEBP)"}
               </span>
               <span className="mt-1 text-xs text-slate-500">
-                Supports lab reports, blood panels, imaging summaries, and clear smartphone photos
+                Supports lab reports, blood panels, imaging summaries, and clear
+                smartphone photos
               </span>
               <input
                 type="file"
@@ -175,7 +233,9 @@ export default function HomePage() {
                 ) : (
                   <FileText className="h-4 w-4" />
                 )}
-                <span>{loading ? "Analyzing Report..." : "Analyze Uploaded Report"}</span>
+                <span>
+                  {loading ? "Analyzing Report..." : "Analyze Uploaded Report"}
+                </span>
               </button>
 
               <button
@@ -205,14 +265,16 @@ export default function HomePage() {
                     {result.ml_insight.category}
                   </h2>
                   <p className="mt-1 text-xs text-slate-300">
-                    Patient: {result.patient.age} yrs, {result.patient.gender} • AI Confidence:{" "}
+                    Patient: {result.patient.age} yrs, {result.patient.gender} •
+                    AI Confidence:{" "}
                     <span className="font-semibold text-teal-300">
                       {result.ml_insight.confidence}%
                     </span>
                   </p>
                 </div>
                 <div className="rounded-xl bg-white/10 px-4 py-2.5 text-xs text-slate-200 backdrop-blur-sm">
-                  <strong>Disclaimer:</strong> Informational screening only, not a clinical diagnosis.
+                  <strong>Disclaimer:</strong> Informational screening only, not
+                  a clinical diagnosis.
                 </div>
               </div>
 
@@ -223,33 +285,37 @@ export default function HomePage() {
               )}
 
               <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {result.ml_insight.possible_conditions && result.ml_insight.possible_conditions.length > 0 && (
-                  <div className="rounded-xl bg-white/5 p-4">
-                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-300">
-                      <Stethoscope className="h-4 w-4" />
-                      <span>Detected Patterns / Conditions</span>
+                {result.ml_insight.possible_conditions &&
+                  result.ml_insight.possible_conditions.length > 0 && (
+                    <div className="rounded-xl bg-white/5 p-4">
+                      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-300">
+                        <Stethoscope className="h-4 w-4" />
+                        <span>Detected Patterns / Conditions</span>
+                      </div>
+                      <ul className="mt-2 space-y-1 text-xs text-slate-200">
+                        {result.ml_insight.possible_conditions.map(
+                          (cond, i) => (
+                            <li key={i}>• {cond}</li>
+                          ),
+                        )}
+                      </ul>
                     </div>
-                    <ul className="mt-2 space-y-1 text-xs text-slate-200">
-                      {result.ml_insight.possible_conditions.map((cond, i) => (
-                        <li key={i}>• {cond}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                  )}
 
-                {result.ml_insight.recommendations && result.ml_insight.recommendations.length > 0 && (
-                  <div className="rounded-xl bg-white/5 p-4">
-                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-300">
-                      <CheckCircle className="h-4 w-4" />
-                      <span>Recommended Next Steps</span>
+                {result.ml_insight.recommendations &&
+                  result.ml_insight.recommendations.length > 0 && (
+                    <div className="rounded-xl bg-white/5 p-4">
+                      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-300">
+                        <CheckCircle className="h-4 w-4" />
+                        <span>Recommended Next Steps</span>
+                      </div>
+                      <ul className="mt-2 space-y-1 text-xs text-slate-200">
+                        {result.ml_insight.recommendations.map((rec, i) => (
+                          <li key={i}>• {rec}</li>
+                        ))}
+                      </ul>
                     </div>
-                    <ul className="mt-2 space-y-1 text-xs text-slate-200">
-                      {result.ml_insight.recommendations.map((rec, i) => (
-                        <li key={i}>• {rec}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                  )}
               </div>
             </div>
 
