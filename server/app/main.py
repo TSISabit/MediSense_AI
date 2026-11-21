@@ -7,10 +7,10 @@ from app.ocr_engine import extract_text_from_image, extract_text_from_pdf
 from app.nlp_analyzer import parse_and_analyze
 from app.ml_model import get_ml_prediction, train_and_save_model
 from app.universal_ai import (
+    ACTIVE_MODEL,
     analyze_file_multimodal,
     analyze_text_universal,
     get_client,
-    get_working_model,
 )
 
 @asynccontextmanager
@@ -124,7 +124,7 @@ def _run_chat_sync(payload: ChatRequest) -> str:
     client = get_client()
     if not client:
         raise ValueError("GEMINI_API_KEY is missing on server.")
-    model_name = get_working_model(client)
+    # model_name = get_working_model(client)
     prompt = f"""
     You are MediSense AI, an empathetic clinical report assistant.
     Patient: {payload.age}-year-old {payload.gender}.
@@ -139,7 +139,7 @@ def _run_chat_sync(payload: ChatRequest) -> str:
     - Provide practical diet/lifestyle guidance and advise consulting a specialist doctor. Keep it clear and well-structured.
     """
     response = client.models.generate_content(
-        model=model_name,
+        model=ACTIVE_MODEL,
         contents=prompt,
     )
     return response.text or ""

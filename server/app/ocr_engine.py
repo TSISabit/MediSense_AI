@@ -1,7 +1,7 @@
+import io
 import fitz  # PyMuPDF
 import pytesseract
-import cv2
-import numpy as np
+from PIL import Image, ImageOps
 
 def extract_text_from_pdf(file_bytes: bytes) -> str:
     text = ""
@@ -11,16 +11,12 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
     return text.strip()
 
 def extract_text_from_image(file_bytes: bytes) -> str:
-    np_arr = np.frombuffer(file_bytes, np.uint8)
-    img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-    if img is None:
+    try:
+        img = Image.open(io.BytesIO(file_bytes)).convert("L")
+        # ডার্ক মোড স্ক্রিনশট হলে অটো ইনভার্ট করবে মাত্র 2MB RAM-এ
+        if img.resize((1, 1)).getpixel((0, 0)) < 127:
+            img = ImageOps.invert(img)
+        return pytesseract.image_to_string(img).strip()
+    except Exception as e:
+        print(f"OCR error: {e}")
         return ""
-    
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-    if np.mean(gray) < 127:
-        gray = cv2.bitwise_not(gray)
-        
-    gray = cv2.resize(gray, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
-    text = pytesseract.image_to_string(gray)
-    return text.strip()
